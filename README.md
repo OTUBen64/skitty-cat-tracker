@@ -63,9 +63,3 @@ This proposal represents the **first phase** of the project, laying out the plan
 - Slack channel `#skitty-app-ben`  
 - This README.md  
 
----
-
-## 🔗 Links  
-- 📄 [Proposal Document](./docs/Skitty_Project_Proposal.docx)  
-- 🎨 [Mockups (Figma Export)](./docs/Mockups.png)  
-- 💻 [GitHub Repo](https://github.com/OTUBen64/skitty-cat-tracker)  
