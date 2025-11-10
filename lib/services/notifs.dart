@@ -2,11 +2,15 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+/// Notification service for scheduling and managing reminders
 class Notifs {
   Notifs._();
+  /// Singleton instance
   static final instance = Notifs._();
+  /// Local notifications plugin
   final _plugin = FlutterLocalNotificationsPlugin();
 
+  /// Initializes notification channels and timezones
   Future<void> init() async {
     tz.initializeTimeZones();
 
@@ -14,6 +18,7 @@ class Notifs {
     const init = InitializationSettings(android: android);
     await _plugin.initialize(init);
 
+    // Create notification channel for reminders
     const channel = AndroidNotificationChannel(
       'skitty_reminders',
       'Skitty Reminders',
@@ -26,6 +31,7 @@ class Notifs {
         ?.createNotificationChannel(channel);
   }
 
+  /// Schedules a daily notification at the given time
   Future<void> scheduleDaily(String id, int hour, int minute, String title, String body) async {
     final details = NotificationDetails(
       android: const AndroidNotificationDetails(
@@ -49,6 +55,8 @@ class Notifs {
     );
   }
 
+  /// Cancels a notification by id
   Future<void> cancel(String id) => _plugin.cancel(id.hashCode);
+  /// Cancels all notifications
   Future<void> cancelAll() => _plugin.cancelAll();
 }

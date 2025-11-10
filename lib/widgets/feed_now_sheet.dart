@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+/// Result object for a feeding entry
 class FeedNowResult {
   final String foodType;
   final int portionGrams;
@@ -8,6 +9,7 @@ class FeedNowResult {
   FeedNowResult(this.foodType, this.portionGrams, this.when);
 }
 
+/// Bottom sheet widget for logging a feeding
 class FeedNowSheet extends StatefulWidget {
   const FeedNowSheet({super.key});
 
@@ -16,11 +18,16 @@ class FeedNowSheet extends StatefulWidget {
 }
 
 class _FeedNowSheetState extends State<FeedNowSheet> {
+  // Form key for validation
   final _formKey = GlobalKey<FormState>();
+  // Selected food type
   String _foodType = 'Wet';
+  // Portion in grams
   int _portion = 60;
+  // Feeding time
   DateTime _when = DateTime.now();
 
+  // Opens date and time pickers
   Future<void> _pickDateTime() async {
     final d = await showDatePicker(
       context: context,
@@ -41,6 +48,7 @@ class _FeedNowSheetState extends State<FeedNowSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Date formatter for display
     final df = DateFormat('EEE, MMM d – h:mm a');
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -49,6 +57,7 @@ class _FeedNowSheetState extends State<FeedNowSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Sheet drag handle
             Container(
               height: 4, width: 40,
               margin: const EdgeInsets.only(bottom: 12),
@@ -57,10 +66,11 @@ class _FeedNowSheetState extends State<FeedNowSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
+            // Title
             Text('Log Feeding', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
 
-            // Food type
+            // Food type dropdown
             DropdownButtonFormField<String>(
               value: _foodType,
               items: const [
@@ -73,7 +83,7 @@ class _FeedNowSheetState extends State<FeedNowSheet> {
               onChanged: (v) => setState(() => _foodType = v ?? 'Wet'),
             ),
 
-            // Portion (grams)
+            // Portion input
             TextFormField(
               initialValue: _portion.toString(),
               keyboardType: TextInputType.number,
@@ -88,7 +98,7 @@ class _FeedNowSheetState extends State<FeedNowSheet> {
               onSaved: (v) => _portion = int.parse(v!),
             ),
 
-            // Time
+            // Time picker
             const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -102,6 +112,7 @@ class _FeedNowSheetState extends State<FeedNowSheet> {
             ),
 
             const SizedBox(height: 8),
+            // Action buttons
             Row(
               children: [
                 Expanded(

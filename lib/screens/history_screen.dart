@@ -4,27 +4,34 @@ import 'package:intl/intl.dart';
 import '../data/feeding_repo.dart';
 import '../models/feeding.dart';
 
+/// Screen showing the history of feedings
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Get the feeding repository and date formatter
     final repo = FeedingRepo.instance;
     final df = DateFormat('EEE, MMM d • h:mm a');
 
+    // Listen for changes in the feedings box
     return ValueListenableBuilder<Box<Feeding>>(
-      valueListenable: repo.listenable(),   // <- this is key
+      valueListenable: repo.listenable(),  
       builder: (context, box, _) {
+        // Get feedings sorted by newest first
         final items = repo.listNewestFirst();
         if (items.isEmpty) {
+          // Show message if no feedings
           return const Center(child: Text('No feedings yet. Log one from Home.'));
         }
+        // Show list of feedings
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: items.length,
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (context, i) {
             final f = items[i];
+            // Each feeding as a ListTile
             return ListTile(
               leading: Icon(
                 f.foodType == 'Dry' ? Icons.rice_bowl_outlined
