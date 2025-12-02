@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../data/member_repo.dart';
+import '../data/pet_repo.dart';
+import '../models/member.dart';
+import '../models/pet.dart';
 
-/// Result object for a feeding entry
 class FeedNowResult {
   final String foodType;
   final int portionGrams;
   final DateTime when;
-  FeedNowResult(this.foodType, this.portionGrams, this.when);
+  final int memberId;
+  final int petId;
+  final String memberName; // for display
+
+  FeedNowResult(
+    this.foodType,
+    this.portionGrams,
+    this.when,
+    this.memberId,
+    this.petId,
+    this.memberName,
+  );
 }
 
-/// Bottom sheet widget for logging a feeding
 class FeedNowSheet extends StatefulWidget {
   const FeedNowSheet({super.key});
 
@@ -18,16 +31,25 @@ class FeedNowSheet extends StatefulWidget {
 }
 
 class _FeedNowSheetState extends State<FeedNowSheet> {
-  // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  // Selected food type
   String _foodType = 'Wet';
-  // Portion in grams
   int _portion = 60;
-  // Feeding time
   DateTime _when = DateTime.now();
 
-  // Opens date and time pickers
+  late List<Member> _members;
+  late List<Pet> _pets;
+  int _memberId = 1;
+  int _petId = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _members = MemberRepo.instance.all();
+    _pets = PetRepo.instance.all();
+    if (_members.isNotEmpty) _memberId = _members.first.id;
+    if (_pets.isNotEmpty) _petId = _pets.first.id;
+  }
+
   Future<void> _pickDateTime() async {
     final d = await showDatePicker(
       context: context,
@@ -48,97 +70,121 @@ class _FeedNowSheetState extends State<FeedNowSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Date formatter for display
     final df = DateFormat('EEE, MMM d – h:mm a');
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Sheet drag handle
-            Container(
-              height: 4, width: 40,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Title
-            Text('Log Feeding', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-
-            // Food type dropdown
-            DropdownButtonFormField<String>(
-              value: _foodType,
-              items: const [
-                DropdownMenuItem(value: 'Wet', child: Text('Wet')),
-                DropdownMenuItem(value: 'Dry', child: Text('Dry')),
-                DropdownMenuItem(value: 'Treat', child: Text('Treat')),
-                DropdownMenuItem(value: 'Other', child: Text('Other')),
-              ],
-              decoration: const InputDecoration(labelText: 'Food type'),
-              onChanged: (v) => setState(() => _foodType = v ?? 'Wet'),
-            ),
-
-            // Portion input
-            TextFormField(
-              initialValue: _portion.toString(),
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Portion (grams)',
-              ),
-              validator: (v) {
-                final n = int.tryParse(v ?? '');
-                if (n == null || n <= 0) return 'Enter a positive number';
-                return null;
-              },
-              onSaved: (v) => _portion = int.parse(v!),
-            ),
-
-            // Time picker
-            const SizedBox(height: 8),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Time'),
-              subtitle: Text(df.format(_when)),
-              trailing: TextButton.icon(
-                onPressed: _pickDateTime,
-                icon: const Icon(Icons.schedule),
-                label: const Text('Pick'),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 4, width: 40,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () {
-                      if (!_formKey.currentState!.validate()) return;
-                      _formKey.currentState!.save();
-                      Navigator.pop(
-                        context,
-                        FeedNowResult(_foodType, _portion, _when),
-                      );
-                    },
-                    child: const Text('Save'),
-                  ),
+              ),
+              Text('Log Feeding', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+
+              // Member
+              DropdownButtonFormField<int>(
+                value: _memberId,
+                items: _members.map((m) => DropdownMenuItem(
+                  value: m.id,
+                  child: Text(m.name),
+                )).toList(),
+                decoration: const InputDecoration(labelText: 'Who fed'),
+                onChanged: (v) => setState(() => _memberId = v ?? _memberId),
+              ),
+
+              // Pet
+              const SizedBox(height: 8),
+              DropdownButtonFormField<int>(
+                value: _petId,
+                items: _pets.map((p) => DropdownMenuItem(
+                  value: p.id,
+                  child: Text(p.name),
+                )).toList(),
+                decoration: const InputDecoration(labelText: 'Which pet'),
+                onChanged: (v) => setState(() => _petId = v ?? _petId),
+              ),
+
+              // Food type
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _foodType,
+                items: const [
+                  DropdownMenuItem(value: 'Wet', child: Text('Wet')),
+                  DropdownMenuItem(value: 'Dry', child: Text('Dry')),
+                  DropdownMenuItem(value: 'Treat', child: Text('Treat')),
+                  DropdownMenuItem(value: 'Other', child: Text('Other')),
+                ],
+                decoration: const InputDecoration(labelText: 'Food type'),
+                onChanged: (v) => setState(() => _foodType = v ?? 'Wet'),
+              ),
+
+              // Portion (grams)
+              TextFormField(
+                initialValue: _portion.toString(),
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Portion (grams)'),
+                validator: (v) {
+                  final n = int.tryParse(v ?? '');
+                  if (n == null || n <= 0) return 'Enter a positive number';
+                  return null;
+                },
+                onSaved: (v) => _portion = int.parse(v!),
+              ),
+
+              // Time
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Time'),
+                subtitle: Text(df.format(_when)),
+                trailing: TextButton.icon(
+                  onPressed: _pickDateTime,
+                  icon: const Icon(Icons.schedule),
+                  label: const Text('Pick'),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ],
+              ),
+
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        if (!_formKey.currentState!.validate()) return;
+                        _formKey.currentState!.save();
+                        final member = _members.firstWhere((m) => m.id == _memberId);
+                        Navigator.pop(
+                          context,
+                          FeedNowResult(
+                            _foodType, _portion, _when, _memberId, _petId, member.name,
+                          ),
+                        );
+                      },
+                      child: const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );

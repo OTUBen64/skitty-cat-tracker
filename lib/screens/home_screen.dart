@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/feed_now_sheet.dart';
 import '../data/feeding_repo.dart';
 import '../models/feeding.dart';
-
+import '../services/cat_fact_service.dart';
 /// Home screen for quick feeding actions
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,8 +11,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Stores the last saved feeding
   Feeding? _lastSaved;
+  late Future<String> _factFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _factFuture = CatFactService.fetchFact();
+  }
+
+  void _retryFact() {
+    setState(() {
+      _factFuture = CatFactService.fetchFact();
+    });
+  }
 
   // Opens the Feed Now sheet and handles saving
   Future<void> _openFeedNow() async {
@@ -48,7 +60,9 @@ class _HomeScreenState extends State<HomeScreen> {
       when: res.when,
       foodType: res.foodType,
       portionGrams: res.portionGrams,
-      by: 'Ben',
+      by: res.memberName,
+      memberId: res.memberId,
+      petId: res.petId,       // <- this line
     );
 
     await FeedingRepo.instance.add(feeding);
@@ -88,7 +102,36 @@ class _HomeScreenState extends State<HomeScreen> {
               Text('Last saved: ${_lastSaved!.foodType} · ${_lastSaved!.portionGrams} g'),
               const SizedBox(height: 12),
             ],
-            // Button to open Feed Now sheet
+          FutureBuilder<String>(
+            future: _factFuture,
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(horizontal:16, vertical: 8),
+                  child: LinearProgressIndicator(),
+                );
+              }
+              if (snap.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: OutlinedButton.icon(
+                    onPressed: _retryFact, // retry
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Load cat tip'),
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal:16, vertical: 8),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text('Tip: ${snap.data}'),
+                  ),
+                ),
+              );
+            },
+          ),
             FilledButton.icon(
               onPressed: _openFeedNow,
               icon: const Icon(Icons.pets),
